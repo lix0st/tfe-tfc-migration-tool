@@ -2,7 +2,10 @@
 Module for Terraform Enterprise/Cloud Migration Worker: Workspaces.
 """
 
+import os
 from .base_worker import TFCMigratorBaseWorker
+# fetch ws env
+TFE_WS_SOURCE = os.getenv("TFE_WS_SOURCE", "")
 
 class WorkspacesWorker(TFCMigratorBaseWorker):
     """
@@ -24,6 +27,14 @@ class WorkspacesWorker(TFCMigratorBaseWorker):
         source_workspaces = self._api_source.workspaces.list_all()
         target_workspaces = self._api_target.workspaces.list_all()
 
+        for source_workspace in source_workspaces:
+            if TFE_WS_SOURCE in source_workspace["attributes"]["name"]:
+                source_workspaces = [ source_workspace ]
+                
+        if TFE_WS_SOURCE and len(source_workspaces) > 1:
+            self.logger.info("Workspace %s not found", TFE_WS_SOURCE)
+            return {}, {}
+        
         target_workspaces_data = {}
         for target_workspace in target_workspaces:
             target_workspaces_data[target_workspace["attributes"]["name"]] = target_workspace["id"]
