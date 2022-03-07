@@ -25,12 +25,14 @@ TFE_VCS_CONNECTION_MAP = None
 SENSITIVE_DATA_MAP = None
 
 
-def main(migrator, delete_all, no_confirmation, migrate_all_state, migrate_sensitive_data, tfe_verify_source):
+def main(migrator, delete_all, no_confirmation, migrate_states_only, migrate_all_state, migrate_sensitive_data, tfe_verify_source):
 
     if delete_all:
         migrator.delete_all_from_target(no_confirmation)
     elif migrate_sensitive_data:
         migrator.migrate_sensitive()
+    elif migrate_states_only:
+        migrator.migrate_states_only(migrate_all_state, tfe_verify_source)
     else:
         migrator.migrate_all(migrate_all_state, tfe_verify_source)
 
@@ -38,6 +40,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Migrate from one TFE/C org to another TFE/C org')
     parser.add_argument('--vcs-file-path', dest="vcs_file_path", default=DEFAULT_VCS_FILE, \
         help="Path to the VCS JSON file. Defaults to `vcs.json`.")
+    parser.add_argument('--migrate-states-only', dest="migrate_states_only", action="store_true", \
+        help="Migrate workspace states only.")
     parser.add_argument('--migrate-all-state', dest="migrate_all_state", action="store_true", \
         help="Migrate all state history workspaces. Default behavior is only current state.")
     parser.add_argument('--sensitive-data-file-path', dest="sensitive_data_file_path", \
@@ -80,4 +84,4 @@ if __name__ == "__main__":
 
     migrator = TFCMigrator(api_source, api_target, TFE_VCS_CONNECTION_MAP, SENSITIVE_DATA_MAP, log_level)
 
-    main(migrator, args.delete_all, args.no_confirmation, args.migrate_all_state, args.migrate_sensitive_data, TFE_VERIFY_SOURCE)
+    main(migrator, args.delete_all, args.no_confirmation, args.migrate_states_only, args.migrate_all_state, args.migrate_sensitive_data, TFE_VERIFY_SOURCE)

@@ -145,6 +145,21 @@ class TFCMigrator(ABC):
         print(json.dumps(output_json))
 
 
+    def migrate_states_only(self):
+        workspaces_map, workspace_to_ssh_key_map = self.workspaces.migrate_all({})
+
+        if migrate_all_state:
+            self.state_versions.migrate_all(workspaces_map, tfe_verify_source)
+        else:
+            self.state_versions.migrate_current(workspaces_map, tfe_verify_source)
+
+        output_json = {
+            "workspaces_map": workspaces_map
+        }
+
+        print(json.dumps(output_json))
+
+
     def migrate_sensitive(self):
         self.config_versions.migrate_config_files()
 
