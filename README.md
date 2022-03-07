@@ -32,6 +32,7 @@ export TFE_TOKEN_SOURCE="foo"
 export TFE_URL_SOURCE="https://app.terraform.io"
 export TFE_ORG_SOURCE="bar"
 export TFE_VERIFY_SOURCE="False" # Optional, defaults to True
+# export TFE_WS_SOURCE="my-workspace" # Optional, if set, only this workspace gets migrated
 
 # Target organization token, URL, and organization name
 export TFE_TOKEN_TARGET="foo"
@@ -43,6 +44,7 @@ export TFE_VERIFY_TARGET="False" # Optional, defaults to True
 * The Token(s) used above must be either a team or user token and have the appropriate level of permissions
 * The URL(s) used above must follow a format of `https://app.terraform.io`
 * The `TFE_VERIFY_SOURCE` and `TFE_VERIFY_TARGET` values should be set to `False` if you want to use HTTP or insecure HTTPS 
+* With `TFE_WS_SOURCE`a single workspace only can be migrated. If nothing's set, all workspaces in `TFE_ORG_SOURCE` will be migrated
 
 ### 3. Build the Required TFE_VCS_CONNECTION_MAP
 
@@ -70,6 +72,7 @@ By default, the migration tool will load these values from a file named `vcs.jso
 
 Before initiating the migration process, first determine which command line arguments you wish to pass (if any).  The following arguments are currently supported:
 * `--vcs-file-path`: this flag allows you to pass a custom file path for your TFE_VCS_CONNECTION_MAP JSON file. If not specified, `vcs.json` will be used by default.
+* `--migrate-states-only`: Only the current state or in combination with `--migrate-all-state` the whole state history of workspaces will be migrated.
 * `--migrate-all-state`: this flag allows you to set the desired behavior for migrating state versions.  If passed, all versions of state will get migrated for all workspaces.  If not specified, only the current version of state for all workspaces will be migrated by default.
 * `> outputs.txt`: this allows you to set the desired behavior for handling outputs.  If passed, all outputs will will be written to an `outputs.txt` file (or file name of your choice).  If not specified, all outputs will appear in the terminal by default.
 
