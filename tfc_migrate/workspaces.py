@@ -24,9 +24,9 @@ class WorkspacesWorker(TFCMigratorBaseWorker):
         self._logger.info("Migrating workspaces...")
 
         # Fetch workspaces from existing org
-        source_workspaces = self._api_source.workspaces.list_all()
-        target_workspaces = self._api_target.workspaces.list_all()
-
+        source_workspaces = self._api_source.workspaces.list_all()["data"]
+        target_workspaces = self._api_target.workspaces.list_all()["data"]
+        
         for source_workspace in source_workspaces:
             if TFE_WS_SOURCE in source_workspace["attributes"]["name"]:
                 source_workspaces = [ source_workspace ]
@@ -112,6 +112,7 @@ class WorkspacesWorker(TFCMigratorBaseWorker):
                 }
 
             # Build the new workspace
+            self._logger.info(new_workspace_payload)
             new_workspace = self._api_target.workspaces.create(new_workspace_payload)
             self._logger.info("Workspace: %s, created.", source_workspace_name)
 
