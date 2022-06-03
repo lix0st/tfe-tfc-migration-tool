@@ -1,9 +1,10 @@
 """
 Module for Terraform Enterprise/Cloud Migration Worker: Teams.
 """
-
+import os
 from .base_worker import TFCMigratorBaseWorker
 
+TFE_WS_SOURCE = os.getenv("TFE_WS_SOURCE", "")
 
 class TeamsWorker(TFCMigratorBaseWorker):
     """
@@ -22,12 +23,33 @@ class TeamsWorker(TFCMigratorBaseWorker):
         self._logger.info("Migrating teams...")
 
         teams_map = {}
-
-        # Fetch teams from existing org
-        source_teams = self._api_source.teams.list()["data"]
-        target_teams = self._api_target.teams.list()["data"]
-
         target_teams_data = {}
+        source_teams = []
+
+        if TFE_WS_SOURCE:
+            # Migrate only teams that are configured in team access for the workspace
+            source_workspace_team_filters = [
+                {
+                    "keys": ["workspace", "id"],
+                    "value": self._api_source.workspaces.show(workspace_name=TFE_WS_SOURCE)["data"]["id"]
+                }
+            ]
+
+            # Pull teams
+            source_workspace_teams = self._api_source.team_access.list(\
+                filters=source_workspace_team_filters)["data"]
+
+            for source_workspace_team in source_workspace_teams:
+                team = self._api_source.teams.show(source_workspace_team["relationships"]["team"]["data"]["id"])["data"]
+                source_teams.append(team)
+
+        else:
+
+            # Fetch teams from existing org
+            source_teams = self._api_source.teams.list_all()["data"]
+
+        target_teams = self._api_target.teams.list_all()["data"]
+
         for target_team in target_teams:
             target_teams_data[target_team["attributes"]["name"]] = target_team["id"]
 
