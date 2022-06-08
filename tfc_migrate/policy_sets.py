@@ -1,9 +1,10 @@
 """
 Module for Terraform Enterprise/Cloud Migration Worker: Policy Sets.
 """
-
+import os
 from .base_worker import TFCMigratorBaseWorker
 
+TFE_WS_SOURCE = os.getenv("TFE_WS_SOURCE", "")
 
 class PolicySetsWorker(TFCMigratorBaseWorker):
     """
@@ -20,8 +21,8 @@ class PolicySetsWorker(TFCMigratorBaseWorker):
         """
 
         # Pull policy sets from the source organization
-        source_policy_sets = self._api_source.policy_sets.list_all(include="policies,workspaces")
-        target_policy_sets = self._api_target.policy_sets.list_all(include="policies,workspaces")
+        source_policy_sets = self._api_source.policy_sets.list(include=["policies","workspaces"])["data"]
+        target_policy_sets = self._api_target.policy_sets.list(include=["policies","workspaces"])["data"]
 
         target_policy_sets_data = {}
         for target_policy_set in target_policy_sets:
@@ -31,8 +32,18 @@ class PolicySetsWorker(TFCMigratorBaseWorker):
         self._logger.info("Migrating policy sets...")
 
         policy_sets_map = {}
+        source_policy_set_name = ""
         for source_policy_set in source_policy_sets:
-            source_policy_set_name = source_policy_set["attributes"]["name"]
+            if TFE_WS_SOURCE:
+                source_policy_set_name = ""
+                for workspace in source_policy_set["relationships"]["workspaces"]["data"]:
+                    if workspace["id"] == self._api_source.workspaces.show(workspace_name=TFE_WS_SOURCE)["data"]["id"]:
+                        source_policy_set_name = source_policy_set["attributes"]["name"]
+                        break
+
+                # If policy set don't have any relationship with workspace that is migrated, we ignore it
+                if source_policy_set_name == "":
+                    continue
 
             if source_policy_set_name in target_policy_sets_data:
                 policy_sets_map[source_policy_set["id"]] = \
@@ -81,15 +92,19 @@ class PolicySetsWorker(TFCMigratorBaseWorker):
                     "data": policy_ids
                 }
 
-            if not source_policy_set["attributes"]["global"]:
+            if source_policy_set["attributes"]["global"] == False:
+                workspace_list = []
                 workspace_ids = source_policy_set["relationships"]["workspaces"]["data"]
-
                 for workspace_id in workspace_ids:
-                    workspace_id["id"] = workspaces_map[workspace_id["id"]]
+                    if TFE_WS_SOURCE:
+                        if workspace_id["id"] == self._api_source.workspaces.show(workspace_name=TFE_WS_SOURCE)["data"]["id"]:
+                            workspace_list.append({"id": workspaces_map[workspace_id["id"]], "type": "workspace"})
+                    else:
+                        workspace_list.append({"id": workspaces_map[workspace_id["id"]], "type": "workspace"})
 
                 # Build the new policy set payload
                 new_policy_set_payload["data"]["relationships"]["workspaces"] = {
-                    "data": workspace_ids
+                    "data": workspace_list
                 }
 
             # Create the policy set in the target organization
