@@ -120,11 +120,11 @@ class TFCMigrator(ABC):
         if self.policy_sets.is_valid_migration():
             sensitive_policy_set_parameter_data = self.policy_set_params.migrate_all(policy_sets_map)
 
-        if self.registry_module_versions.is_valid_migration():
-            self.registry_module_versions.migrate_all()
+        #if self.registry_module_versions.is_valid_migration():
+        #    self.registry_module_versions.migrate_all()
             
-        if self.registry_modules.is_valid_migration():
-            self.registry_modules.migrate_all()
+        #if self.registry_modules.is_valid_migration():
+        #    self.registry_modules.migrate_all()
 
 
         output_json = {
